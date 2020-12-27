@@ -26,7 +26,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2556089021772057943}
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalPosition: {x: 0, y: 0.5, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 1044279995768919111}
@@ -96,6 +96,7 @@ GameObject:
   - component: {fileID: 5723116075430156921}
   - component: {fileID: 6309915384294009621}
   - component: {fileID: 2642677252657725189}
+  - component: {fileID: 7709718080320007123}
   - component: {fileID: 223790017642510359}
   m_Layer: 0
   m_Name: Player
@@ -196,6 +197,19 @@ CapsuleCollider:
   m_Height: 2
   m_Direction: 1
   m_Center: {x: 0, y: 0, z: 0}
+--- !u!65 &7709718080320007123
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3864500488706073482}
+  m_Material: {fileID: 0}
+  m_IsTrigger: 0
+  m_Enabled: 1
+  serializedVersion: 2
+  m_Size: {x: 1, y: 2, z: 1}
+  m_Center: {x: 0, y: 0, z: 0}
 --- !u!114 &223790017642510359
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -210,3 +224,5 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   rb: {fileID: 6309915384294009621}
   cam: {fileID: 0}
+  jumpPower: 6
+  maxJumps: 2
