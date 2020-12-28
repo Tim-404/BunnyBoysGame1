@@ -9,6 +9,7 @@ public class PlayerMovement : MonoBehaviour
     public Rigidbody rb;
     public Camera cam;
 
+
     private Vector3 velocity;
     private Vector3 playerRot;
     private Vector3 cameraRot;
@@ -17,7 +18,9 @@ public class PlayerMovement : MonoBehaviour
     private bool jumpScheduled = false;
     private int numJumps = 0;
 
+
     private const float maxCameraRot = 90f;
+
     [SerializeField]
     private float jumpPower = 6f;
     [SerializeField]
@@ -75,8 +78,7 @@ public class PlayerMovement : MonoBehaviour
     {
         if (jumpScheduled)
         {
-            this.rb.velocity = new Vector3(this.rb.velocity.x, 0, this.rb.velocity.z);
-            this.rb.AddForce(new Vector3(0f, jumpPower, 0f), ForceMode.VelocityChange);
+            this.rb.velocity = new Vector3(this.rb.velocity.x, this.jumpPower, this.rb.velocity.z);
             ++this.numJumps;
             this.jumpScheduled = false;
         }

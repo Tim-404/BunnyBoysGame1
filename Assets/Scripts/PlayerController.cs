@@ -7,11 +7,10 @@
 public class PlayerController : MonoBehaviour
 {
     public PlayerMovement motor;
+    public float cameraSensitivity = 6f;
 
     [SerializeField]
     private float moveSpeed = 10f;
-    [SerializeField]
-    private float cameraSensitivity = 6f;
 
     /// <summary>
     /// Processes all player inputs, like movement or attacks.
@@ -33,7 +32,7 @@ public class PlayerController : MonoBehaviour
         // Uses inputs in Edit -> Project Settings -> Input Manager
         Vector3 xMov = transform.right * Input.GetAxisRaw("Horizontal");
         Vector3 zMov = transform.forward * Input.GetAxisRaw("Vertical");
-        return (xMov + zMov).normalized * moveSpeed * Time.fixedDeltaTime;
+        return (xMov + zMov).normalized * this.moveSpeed * Time.fixedDeltaTime;
     }
 
     /// <summary>
@@ -43,7 +42,7 @@ public class PlayerController : MonoBehaviour
     private Vector3 CalcPlayerRot()
     {
         float horizRot = Input.GetAxisRaw("Mouse X");
-        return new Vector3(0f, horizRot, 0f) * cameraSensitivity;
+        return new Vector3(0f, horizRot, 0f) * this.cameraSensitivity;
     }
 
     /// <summary>
@@ -53,7 +52,7 @@ public class PlayerController : MonoBehaviour
     private Vector3 CalcCamRot()
     {
         float vertRot = Input.GetAxisRaw("Mouse Y");
-        return new Vector3(vertRot, 0f, 0f) * cameraSensitivity;
+        return new Vector3(vertRot, 0f, 0f) * this.cameraSensitivity;
     }
 
     /// <summary>
@@ -63,7 +62,7 @@ public class PlayerController : MonoBehaviour
     {   // Input.GetKeyDown() only fires once per press
         if (Input.GetKeyDown("space"))
         {
-            motor.ScheduleJump();
+            this.motor.ScheduleJump();
         }
     }
 }
