@@ -8,6 +8,9 @@ public class PlayerSetup : NetworkBehaviour
 
     Camera lobbyCamera;
 
+    /// <summary>
+    /// Disables scripts attached to all clients except the host, otherwise anyone can control anyone.
+    /// </summary>
     private void Start()
     {
         if (!isLocalPlayer)
@@ -27,6 +30,9 @@ public class PlayerSetup : NetworkBehaviour
         }
     }
 
+    /// <summary>
+    /// Reenables lobby camera.
+    /// </summary>
     private void OnDisable()
     {
         if (lobbyCamera != null)
