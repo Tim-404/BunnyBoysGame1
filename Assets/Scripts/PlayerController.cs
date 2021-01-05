@@ -12,7 +12,7 @@ public class PlayerController : MonoBehaviour
     [SerializeField]
     private const float walkSpeed = 10f;
     [SerializeField]
-    private const float sprintSpeed = 15f;
+    private const float sprintSpeed = 20f;
     [SerializeField]
     private float moveSpeed = walkSpeed;
 
