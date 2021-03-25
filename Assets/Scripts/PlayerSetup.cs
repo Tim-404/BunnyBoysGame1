@@ -3,7 +3,8 @@ using Mirror;
 
 public class PlayerSetup : NetworkBehaviour
 {
-    [SerializeField] private Behaviour[] componentsToDisable;
+    [SerializeField]
+    private Behaviour[] componentsToDisable;
 
     Camera lobbyCamera;
 
