@@ -6,25 +6,29 @@ using UnityEngine;
 /// </summary>
 public class PlayerMovement : MonoBehaviour
 {
-    public Rigidbody rb;
-    public Camera cam;
+    public PlayerSupervisor supervisor;
 
+    [SerializeField] private float jumpPower = 6f;
+    [SerializeField] private int maxJumps = 2;
 
+    private Rigidbody rb;
     private Vector3 velocity;
     private Vector3 playerRot;
-    private Vector3 cameraRot;
-    private float camRotTracker = 0;
 
     private bool jumpScheduled = false;
     private int numJumps = 0;
 
+    private Camera cam;
+    private Vector3 cameraRot;
+    private float camRotTracker = 0;
 
     private const float maxCameraRot = 90f;
 
-    [SerializeField]
-    private float jumpPower = 6f;
-    [SerializeField]
-    private int maxJumps = 2;
+    private void Start()
+    {
+        rb = supervisor.rb;
+        cam = supervisor.cam;
+    }
 
     /// <summary>
     /// Updates player.
