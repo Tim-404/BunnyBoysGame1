@@ -6,11 +6,6 @@
 public class PlayerController : MonoBehaviour
 {
     public PlayerSupervisor supervisor;
-    public float cameraSensitivity = 6f;
-
-    [SerializeField] private const float walkSpeed = 10f;
-    [SerializeField] private const float sprintSpeed = 20f;
-    [SerializeField] private float moveSpeed = walkSpeed;
 
     /// <summary>
     /// Processes all player inputs, like movement or attacks.
@@ -34,7 +29,7 @@ public class PlayerController : MonoBehaviour
         // Uses inputs in Edit -> Project Settings -> Input Manager
         Vector3 xMov = transform.right * Input.GetAxisRaw("Horizontal");
         Vector3 zMov = transform.forward * Input.GetAxisRaw("Vertical");
-        return (xMov + zMov).normalized * this.moveSpeed * Time.fixedDeltaTime;
+        return (xMov + zMov).normalized * Time.fixedDeltaTime;
     }
 
     /// <summary>
@@ -43,14 +38,7 @@ public class PlayerController : MonoBehaviour
     private void CheckSprint()
     {
         // Uses inputs in Edit -> Project Settings -> Input Manager
-        if (Input.GetAxisRaw("Sprint") == 1)
-        {
-            moveSpeed = sprintSpeed;
-        }
-        else
-        {
-            moveSpeed = walkSpeed;
-        }
+        this.supervisor.UpdateSprint(Input.GetAxisRaw("Sprint") == 1);
     }
 
     /// <summary>
@@ -60,7 +48,7 @@ public class PlayerController : MonoBehaviour
     private Vector3 CalcPlayerRot()
     {
         float horizRot = Input.GetAxisRaw("Mouse X");
-        return new Vector3(0f, horizRot, 0f) * this.cameraSensitivity;
+        return new Vector3(0f, horizRot, 0f);
     }
 
     /// <summary>
@@ -70,7 +58,7 @@ public class PlayerController : MonoBehaviour
     private Vector3 CalcCamRot()
     {
         float vertRot = Input.GetAxisRaw("Mouse Y");
-        return new Vector3(vertRot, 0f, 0f) * this.cameraSensitivity;
+        return new Vector3(vertRot, 0f, 0f);
     }
 
     /// <summary>

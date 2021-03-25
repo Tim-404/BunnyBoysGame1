@@ -147,7 +147,7 @@ public class PlayerAttack : NetworkBehaviour
     /// <param name="victim">The player to check</param>
     /// <returns></returns>
     [Server]
-    public bool PreviouslyHit(PlayerHealth victim)
+    private bool PreviouslyHit(PlayerHealth victim)
     {
         return currentVictims.Contains(victim);
     }
@@ -157,7 +157,7 @@ public class PlayerAttack : NetworkBehaviour
     /// </summary>
     /// <param name="victim">The player to injure</param>
     [Server]
-    public void InflictDamageOn(PlayerHealth victim)
+    private void InflictDamageOn(PlayerHealth victim)
     {
         victim.Damage(attackStrength);
         AddVictim(victim);

@@ -8,20 +8,23 @@ public class PlayerMovement : MonoBehaviour
 {
     public PlayerSupervisor supervisor;
 
+    [SerializeField] private const float walkSpeed = 10f;
+    [SerializeField] private const float sprintSpeed = 20f;
+    [SerializeField] private float cameraSensitivity = 6f;
     [SerializeField] private float jumpPower = 6f;
-    [SerializeField] private int maxJumps = 2;
 
     private Rigidbody rb;
     private Vector3 velocity;
-    private Vector3 playerRot;
+    private float moveSpeed = walkSpeed;
 
     private bool jumpScheduled = false;
     private int numJumps = 0;
+    private int maxJumps = 2;
 
     private Camera cam;
+    private Vector3 playerRot;
     private Vector3 cameraRot;
     private float camRotTracker = 0;
-
     private const float maxCameraRot = 90f;
 
     private void Start()
@@ -103,7 +106,7 @@ public class PlayerMovement : MonoBehaviour
     /// <param name="vel">The new velocity.</param>
     public void UpdateVelocity(Vector3 vel)
     {
-        this.velocity = vel;
+        this.velocity = vel * moveSpeed;
     }
 
     /// <summary>
@@ -112,7 +115,7 @@ public class PlayerMovement : MonoBehaviour
     /// <param name="newRot">The new player rotation.</param>
     public void UpdatePlayerRot(Vector3 newRot)
     {
-        this.playerRot = newRot;
+        this.playerRot = newRot * cameraSensitivity;
     }
 
     /// <summary>
@@ -121,6 +124,15 @@ public class PlayerMovement : MonoBehaviour
     /// <param name="newRot">The new camera rotation.</param>
     public void UpdateCamRot(Vector3 newRot)
     {
-        this.cameraRot = newRot;
+        this.cameraRot = newRot * cameraSensitivity;
+    }
+
+    /// <summary>
+    /// Toggles movespeed to reflect whether the player is sprinting or not.
+    /// </summary>
+    /// <param name="sprinting"></param>
+    public void UpdateSprint(bool sprinting)
+    {
+        moveSpeed = sprinting ? sprintSpeed : walkSpeed;
     }
 }

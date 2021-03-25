@@ -24,6 +24,11 @@ public class PlayerSupervisor : MonoBehaviour
         motor.UpdateVelocity(vel);
     }
 
+    public void UpdateSprint(bool sprinting)
+    {
+        motor.UpdateSprint(sprinting);
+    }
+
     public void UpdatePlayerRot(Vector3 newRot)
     {
         motor.UpdatePlayerRot(newRot);
