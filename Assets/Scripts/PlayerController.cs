@@ -1,26 +1,25 @@
 ﻿using UnityEngine;
 
 /// <summary>
-/// Handles everything related to player input and performs calculations before
-/// physics are implemented.
+/// Receives and interprets player input before passing it to the PlayerSupervisor.
 /// </summary>
 public class PlayerController : MonoBehaviour
 {
-    public PlayerMovement motor;
+    public PlayerSupervisor supervisor;
     public float cameraSensitivity = 6f;
 
-    [SerializeField]
-    private float moveSpeed = 10f;
+    [SerializeField] private float moveSpeed = 10f;
 
     /// <summary>
     /// Processes all player inputs, like movement or attacks.
     /// </summary>
     private void Update()
     {
-        this.motor.UpdateVelocity(CalcLateralVelocity());
-        this.motor.UpdatePlayerRot(CalcPlayerRot());
-        this.motor.UpdateCamRot(CalcCamRot());
+        this.supervisor.UpdateVelocity(CalcLateralVelocity());
+        this.supervisor.UpdatePlayerRot(CalcPlayerRot());
+        this.supervisor.UpdateCamRot(CalcCamRot());
         ReadJump();
+        ReadAttack();
     }
 
     /// <summary>
@@ -62,7 +61,18 @@ public class PlayerController : MonoBehaviour
     {   // Input.GetKeyDown() only fires once per press
         if (Input.GetKeyDown("space"))
         {
-            this.motor.ScheduleJump();
+            this.supervisor.ScheduleJump();
+        }
+    }
+
+    /// <summary>
+    /// Determines when the player wants to attack.
+    /// </summary>
+    private void ReadAttack()
+    {
+        if (Input.GetMouseButtonDown(0))
+        {
+            this.supervisor.ScheduleAttack();
         }
     }
 }

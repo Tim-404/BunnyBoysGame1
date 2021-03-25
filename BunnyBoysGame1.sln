@@ -19,9 +19,9 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "kcp2k", "kcp2k.csproj", "{B
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Mirror.Examples.Cloud.Pong", "Mirror.Examples.Cloud.Pong.csproj", "{6B64F0C4-ACA1-8082-4055-BD08DCBF6DAC}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Mirror.Authenticators", "Mirror.Authenticators.csproj", "{13B1DEE4-D18E-3F87-67AF-FE5F2B4AD256}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Assembly-CSharp", "Assembly-CSharp.csproj", "{37AF070A-6A70-60DD-0822-CB3C2EE9E5B5}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Mirror.Authenticators", "Mirror.Authenticators.csproj", "{13B1DEE4-D18E-3F87-67AF-FE5F2B4AD256}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Mirror.Weaver", "Mirror.Weaver.csproj", "{F49A6991-9B9E-1520-D988-863E9C537B12}"
 EndProject
@@ -71,14 +71,14 @@ Global
 		{6B64F0C4-ACA1-8082-4055-BD08DCBF6DAC}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{6B64F0C4-ACA1-8082-4055-BD08DCBF6DAC}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{6B64F0C4-ACA1-8082-4055-BD08DCBF6DAC}.Release|Any CPU.Build.0 = Release|Any CPU
-		{13B1DEE4-D18E-3F87-67AF-FE5F2B4AD256}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{13B1DEE4-D18E-3F87-67AF-FE5F2B4AD256}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{13B1DEE4-D18E-3F87-67AF-FE5F2B4AD256}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{13B1DEE4-D18E-3F87-67AF-FE5F2B4AD256}.Release|Any CPU.Build.0 = Release|Any CPU
 		{37AF070A-6A70-60DD-0822-CB3C2EE9E5B5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{37AF070A-6A70-60DD-0822-CB3C2EE9E5B5}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{37AF070A-6A70-60DD-0822-CB3C2EE9E5B5}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{37AF070A-6A70-60DD-0822-CB3C2EE9E5B5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{13B1DEE4-D18E-3F87-67AF-FE5F2B4AD256}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{13B1DEE4-D18E-3F87-67AF-FE5F2B4AD256}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{13B1DEE4-D18E-3F87-67AF-FE5F2B4AD256}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{13B1DEE4-D18E-3F87-67AF-FE5F2B4AD256}.Release|Any CPU.Build.0 = Release|Any CPU
 		{F49A6991-9B9E-1520-D988-863E9C537B12}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{F49A6991-9B9E-1520-D988-863E9C537B12}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F49A6991-9B9E-1520-D988-863E9C537B12}.Release|Any CPU.ActiveCfg = Release|Any CPU
