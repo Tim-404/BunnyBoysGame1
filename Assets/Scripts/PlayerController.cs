@@ -8,13 +8,16 @@ public class PlayerController : MonoBehaviour
     public PlayerSupervisor supervisor;
     public float cameraSensitivity = 6f;
 
-    [SerializeField] private float moveSpeed = 10f;
+    [SerializeField] private const float walkSpeed = 10f;
+    [SerializeField] private const float sprintSpeed = 20f;
+    [SerializeField] private float moveSpeed = walkSpeed;
 
     /// <summary>
     /// Processes all player inputs, like movement or attacks.
     /// </summary>
     private void Update()
     {
+        CheckSprint();
         this.supervisor.UpdateVelocity(CalcLateralVelocity());
         this.supervisor.UpdatePlayerRot(CalcPlayerRot());
         this.supervisor.UpdateCamRot(CalcCamRot());
@@ -32,6 +35,22 @@ public class PlayerController : MonoBehaviour
         Vector3 xMov = transform.right * Input.GetAxisRaw("Horizontal");
         Vector3 zMov = transform.forward * Input.GetAxisRaw("Vertical");
         return (xMov + zMov).normalized * this.moveSpeed * Time.fixedDeltaTime;
+    }
+
+    /// <summary>
+    /// Checks if sprint is enabled
+    /// </summary>
+    private void CheckSprint()
+    {
+        // Uses inputs in Edit -> Project Settings -> Input Manager
+        if (Input.GetAxisRaw("Sprint") == 1)
+        {
+            moveSpeed = sprintSpeed;
+        }
+        else
+        {
+            moveSpeed = walkSpeed;
+        }
     }
 
     /// <summary>
