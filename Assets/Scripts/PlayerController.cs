@@ -1,20 +1,16 @@
 ﻿using UnityEngine;
 
 /// <summary>
-/// Handles everything related to player input and performs calculations before
-/// physics are implemented.
+/// Receives and interprets player input before passing it to the PlayerSupervisor.
 /// </summary>
 public class PlayerController : MonoBehaviour
 {
-    public PlayerMovement motor;
+    public PlayerSupervisor supervisor;
     public float cameraSensitivity = 6f;
 
-    [SerializeField]
-    private const float walkSpeed = 10f;
-    [SerializeField]
-    private const float sprintSpeed = 20f;
-    [SerializeField]
-    private float moveSpeed = walkSpeed;
+    [SerializeField] private const float walkSpeed = 10f;
+    [SerializeField] private const float sprintSpeed = 20f;
+    [SerializeField] private float moveSpeed = walkSpeed;
 
     /// <summary>
     /// Processes all player inputs, like movement or attacks.
@@ -22,27 +18,12 @@ public class PlayerController : MonoBehaviour
     private void Update()
     {
         CheckSprint();
-        this.motor.UpdateVelocity(CalcLateralVelocity());
-        this.motor.UpdatePlayerRot(CalcPlayerRot());
-        this.motor.UpdateCamRot(CalcCamRot());
+        this.supervisor.UpdateVelocity(CalcLateralVelocity());
+        this.supervisor.UpdatePlayerRot(CalcPlayerRot());
+        this.supervisor.UpdateCamRot(CalcCamRot());
         ReadJump();
+        ReadAttack();
     }
-
-    /// <summary>
-    /// Checks if sprint is enabled
-    /// </summary>
-    private void CheckSprint()
-    {
-        // Uses inputs in Edit -> Project Settings -> Input Manager
-        if (Input.GetAxisRaw("Sprint") == 1)
-        {
-            moveSpeed = sprintSpeed;
-        } else
-        {
-            moveSpeed = walkSpeed;
-        }
-    }
-
 
     /// <summary>
     /// Calculates player movement.
@@ -54,6 +35,22 @@ public class PlayerController : MonoBehaviour
         Vector3 xMov = transform.right * Input.GetAxisRaw("Horizontal");
         Vector3 zMov = transform.forward * Input.GetAxisRaw("Vertical");
         return (xMov + zMov).normalized * this.moveSpeed * Time.fixedDeltaTime;
+    }
+
+    /// <summary>
+    /// Checks if sprint is enabled
+    /// </summary>
+    private void CheckSprint()
+    {
+        // Uses inputs in Edit -> Project Settings -> Input Manager
+        if (Input.GetAxisRaw("Sprint") == 1)
+        {
+            moveSpeed = sprintSpeed;
+        }
+        else
+        {
+            moveSpeed = walkSpeed;
+        }
     }
 
     /// <summary>
@@ -83,7 +80,18 @@ public class PlayerController : MonoBehaviour
     {   // Input.GetKeyDown() only fires once per press
         if (Input.GetKeyDown("space"))
         {
-            this.motor.ScheduleJump();
+            this.supervisor.ScheduleJump();
+        }
+    }
+
+    /// <summary>
+    /// Determines when the player wants to attack.
+    /// </summary>
+    private void ReadAttack()
+    {
+        if (Input.GetMouseButtonDown(0))
+        {
+            this.supervisor.ScheduleAttack();
         }
     }
 }
