@@ -10,16 +10,19 @@ public class PlayerMovement : MonoBehaviour
 
     [SerializeField] private const float walkSpeed = 10f;
     [SerializeField] private const float sprintSpeed = 20f;
+    [SerializeField] private const float aerialAgility = 0.004f;    // extremely sensitive
+    [SerializeField] private const float maxAerialMobility = 8f;
     [SerializeField] private float cameraSensitivity = 6f;
     [SerializeField] private float jumpPower = 6f;
 
     private Rigidbody rb;
-    private Vector3 velocity;
+    private Vector3 lateralVelocity;
     private float moveSpeed = walkSpeed;
 
     private bool jumpScheduled = false;
-    private int numJumps = 0;
-    private int maxJumps = 2;
+    private bool isGrounded = true;
+    private int numAirJumps = 0;
+    private int maxAirJumps = 1;
 
     private Camera cam;
     private Vector3 playerRot;
@@ -41,6 +44,7 @@ public class PlayerMovement : MonoBehaviour
         Move();
         Rotate();
         Jump();
+        UpdateIsGrounded();
     }
 
     /// <summary>
@@ -49,9 +53,17 @@ public class PlayerMovement : MonoBehaviour
     /// <param name="collision"></param>
     private void OnCollisionEnter(Collision collision)
     {
-        if (collision.collider.tag == "Ground")
+        if (CollisionIsGround(collision))
         {
-            numJumps = 0;
+            numAirJumps = 0;
+        }
+    }
+
+    private void OnCollisionStay(Collision collision)
+    {
+        if (CollisionIsGround(collision))
+        {
+            isGrounded = true;
         }
     }
 
@@ -60,16 +72,8 @@ public class PlayerMovement : MonoBehaviour
     /// </summary>
     private void Move()
     {
-        if (IsGrounded())
-        {
-            // RigidBody.MovePosition(float) does automatic physics checking
-            this.rb.MovePosition(this.rb.position + this.velocity);
-        }
-        else
-        {
-            // Prevents jagged aerial movements
-            this.rb.AddForce(this.velocity);
-        }
+        // RigidBody.MovePosition(float) does automatic physics checking
+        this.rb.MovePosition(this.rb.position + this.lateralVelocity);
     }
 
     /// <summary>
@@ -94,35 +98,62 @@ public class PlayerMovement : MonoBehaviour
         if (jumpScheduled)
         {
             this.rb.velocity = new Vector3(this.rb.velocity.x, this.jumpPower, this.rb.velocity.z);
-            ++this.numJumps;
             this.jumpScheduled = false;
+            if (!isGrounded)
+            {
+                ++this.numAirJumps;
+            }
         }
     }
 
-    /// <summary>
-    /// Checks is the player is on the ground.
-    /// </summary>
-    private bool IsGrounded()
+    private void UpdateIsGrounded()
     {
-        return numJumps == 0;
+        if (rb.velocity.y != 0f)
+        {
+            isGrounded = false;
+        }
+    }
+
+    /// <param name="collision">The collisions object</param>
+    /// <returns>Whether the collision occurred with the ground.</returns>
+    private bool CollisionIsGround(Collision collision)
+    {
+        return collision.collider.tag == "Ground";
     }
 
     /// <summary>
     /// Determines if the player should jump or not.
     /// </summary>
-    /// <remarks>Scheduling will make it easier to implement short hops later if we want to.</remarks>
     public void ScheduleJump()
     {
-        this.jumpScheduled = this.numJumps < maxJumps;
+        this.jumpScheduled = this.numAirJumps < maxAirJumps;
     }
 
     /// <summary>
     /// Updates the velocity of the player.
     /// </summary>
     /// <param name="vel">The new velocity.</param>
-    public void UpdateVelocity(Vector3 vel)
+    public void UpdateVelocity(Vector3 direction)
     {
-        this.velocity = vel * moveSpeed;
+        if (isGrounded)
+        {
+            this.lateralVelocity = direction * moveSpeed;
+        }
+        else
+        {
+            // Prevents jagged aerial movement
+            Vector3 targetVelocity = direction * maxAerialMobility;
+            Vector3 velocityDiff = targetVelocity - this.lateralVelocity;
+            Vector3 acceleration = (velocityDiff).normalized * aerialAgility;
+            if (acceleration.sqrMagnitude >= velocityDiff.sqrMagnitude)
+            {
+                this.lateralVelocity = targetVelocity;
+            }
+            else
+            {
+                this.lateralVelocity += acceleration;
+            }
+        }
     }
 
     /// <summary>
@@ -149,6 +180,6 @@ public class PlayerMovement : MonoBehaviour
     /// <param name="sprinting"></param>
     public void UpdateSprint(bool sprinting)
     {
-        moveSpeed = sprinting ? sprintSpeed : walkSpeed;
+        moveSpeed = sprinting && isGrounded ? sprintSpeed : walkSpeed;
     }
 }

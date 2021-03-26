@@ -19,9 +19,9 @@ public class PlayerSupervisor : MonoBehaviour
 
 
     /* Calls to motor */
-    public void UpdateVelocity(Vector3 vel)
+    public void UpdateDirection(Vector3 direction)
     {
-        motor.UpdateVelocity(vel);
+        motor.UpdateVelocity(direction);
     }
 
     public void UpdateSprint(bool sprinting)

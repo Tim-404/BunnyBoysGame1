@@ -13,7 +13,7 @@ public class PlayerController : MonoBehaviour
     private void Update()
     {
         CheckSprint();
-        this.supervisor.UpdateVelocity(CalcLateralVelocity());
+        this.supervisor.UpdateDirection(CalcLateralDirection());
         this.supervisor.UpdatePlayerRot(CalcPlayerRot());
         this.supervisor.UpdateCamRot(CalcCamRot());
         ReadJump();
@@ -24,7 +24,7 @@ public class PlayerController : MonoBehaviour
     /// Calculates player movement.
     /// </summary>
     /// <returns>The vector that determines where the player will move.</returns>
-    private Vector3 CalcLateralVelocity()
+    private Vector3 CalcLateralDirection()
     {
         // Uses inputs in Edit -> Project Settings -> Input Manager
         Vector3 xMov = transform.right * Input.GetAxisRaw("Horizontal");
