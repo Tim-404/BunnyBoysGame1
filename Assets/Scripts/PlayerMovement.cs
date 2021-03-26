@@ -60,8 +60,16 @@ public class PlayerMovement : MonoBehaviour
     /// </summary>
     private void Move()
     {
-        // RigidBody.MovePosition(float) does automatic physics checking
-        this.rb.MovePosition(this.rb.position + this.velocity);
+        if (IsGrounded())
+        {
+            // RigidBody.MovePosition(float) does automatic physics checking
+            this.rb.MovePosition(this.rb.position + this.velocity);
+        }
+        else
+        {
+            // Prevents jagged aerial movements
+            this.rb.AddForce(this.velocity);
+        }
     }
 
     /// <summary>
@@ -89,6 +97,14 @@ public class PlayerMovement : MonoBehaviour
             ++this.numJumps;
             this.jumpScheduled = false;
         }
+    }
+
+    /// <summary>
+    /// Checks is the player is on the ground.
+    /// </summary>
+    private bool IsGrounded()
+    {
+        return numJumps == 0;
     }
 
     /// <summary>
