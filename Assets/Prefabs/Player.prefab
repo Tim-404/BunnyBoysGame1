@@ -196,7 +196,7 @@ Rigidbody:
   m_UseGravity: 1
   m_IsKinematic: 0
   m_Interpolate: 0
-  m_Constraints: 0
+  m_Constraints: 80
   m_CollisionDetection: 0
 --- !u!136 &2642677252657725189
 CapsuleCollider:
@@ -238,8 +238,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   supervisor: {fileID: 8822970831047661330}
-  cameraSensitivity: 6
-  moveSpeed: 10
 --- !u!114 &8822970831047661330
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -252,13 +250,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e13e387fa9becca49898b4935502124e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  UI: {fileID: -6321361687740628523}
   motor: {fileID: 223790017642510359}
   rb: {fileID: 6309915384294009621}
   cam: {fileID: 3938655842302102633}
   attacker: {fileID: 4366960603527418558}
   attackHitbox: {fileID: 8219261827474456246}
   healthMonitor: {fileID: 4602214492880086931}
+  UI: {fileID: -6321361687740628523}
 --- !u!114 &223790017642510359
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -272,8 +270,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   supervisor: {fileID: 8822970831047661330}
+  cameraSensitivity: 6
   jumpPower: 6
-  maxJumps: 2
 --- !u!114 &4366960603527418558
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -286,6 +284,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3f829ab45efa7af419e3243e967e9196, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  syncMode: 0
+  syncInterval: 0.1
   supervisor: {fileID: 8822970831047661330}
   maxAttackCooldown: 3
   attackDuration: 1
@@ -302,6 +302,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3618e03b07ef34b41a3519f700d6b4a0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  syncMode: 0
+  syncInterval: 0.1
   supervisor: {fileID: 8822970831047661330}
 --- !u!114 &-6321361687740628523
 MonoBehaviour:
