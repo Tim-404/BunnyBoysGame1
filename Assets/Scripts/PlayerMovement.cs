@@ -8,16 +8,16 @@ public class PlayerMovement : MonoBehaviour
 {
     public PlayerSupervisor supervisor;
 
-    [SerializeField] private const float walkSpeed = 10f;
-    [SerializeField] private const float sprintSpeed = 20f;
-    [SerializeField] private const float aerialAgility = 0.005f;    // extremely sensitive
-    [SerializeField] private const float maxAerialMobility = 5f;
+    [SerializeField] private float walkSpeed = 10f;
+    [SerializeField] private float sprintSpeed = 20f;
+    [SerializeField] private float aerialAgility = 0.005f;    // extremely sensitive
+    [SerializeField] private float maxAerialMobility = 5f;
     [SerializeField] private float cameraSensitivity = 6f;
     [SerializeField] private float jumpPower = 6f;
 
     private Rigidbody rb;
     private Vector3 lateralVelocity;
-    private float moveSpeed = walkSpeed;
+    private float moveSpeed = 10f;
 
     private bool jumpScheduled = false;
     private bool isGrounded = true;
@@ -27,7 +27,7 @@ public class PlayerMovement : MonoBehaviour
     private Camera cam;
     private Vector3 playerRot;
     private Vector3 cameraRot;
-    private float camRotTracker = 0;
+    private float camRotTracker = 0f;
     private const float maxCameraRot = 90f;
 
     // Used to correct lateralVelocity with aerial collisions
@@ -83,7 +83,7 @@ public class PlayerMovement : MonoBehaviour
         TrackPreviousLocation();
         CalibrateRBVelocity();
         // RigidBody.MovePosition(float) does automatic physics checking
-        this.rb.MovePosition(this.rb.position + this.lateralVelocity);
+        rb.MovePosition(rb.position + lateralVelocity);
     }
 
     /// <summary>
@@ -91,12 +91,12 @@ public class PlayerMovement : MonoBehaviour
     /// </summary>
     private void Rotate()
     {
-        this.rb.MoveRotation(this.rb.rotation * Quaternion.Euler(this.playerRot));
+        rb.MoveRotation(rb.rotation * Quaternion.Euler(playerRot));
 
-        if (this.cam != null && Math.Abs(this.camRotTracker + this.cameraRot.x) < maxCameraRot)
+        if (cam != null && Math.Abs(camRotTracker + cameraRot.x) < maxCameraRot)
         {
-            this.cam.transform.Rotate(-this.cameraRot);
-            this.camRotTracker += this.cameraRot.x;
+            cam.transform.Rotate(-cameraRot);
+            camRotTracker += cameraRot.x;
         }
     }
 
@@ -107,11 +107,12 @@ public class PlayerMovement : MonoBehaviour
     {
         if (jumpScheduled)
         {
-            this.rb.velocity = new Vector3(0, this.jumpPower, 0);
-            this.jumpScheduled = false;
+            rb.velocity.Set(0f, jumpPower, 0f);
+            rb.AddForce(-rb.velocity.x, jumpPower - rb.velocity.y, -rb.velocity.z, ForceMode.VelocityChange);
+            jumpScheduled = false;
             if (!isGrounded)
             {
-               ++this.numAirJumps;
+               ++numAirJumps;
             }
         }
     }
@@ -121,12 +122,12 @@ public class PlayerMovement : MonoBehaviour
     /// </summary>
     private void TrackPreviousLocation()
     {
-        prevLocation = this.rb.position;
+        prevLocation = rb.position;
     }
 
     private void CalibrateRBVelocity()
     {
-        rb.velocity = new Vector3(0, rb.velocity.y, 0);
+        rb.AddForce(-rb.velocity.x, 0f, -rb.velocity.z, ForceMode.VelocityChange);
     }
 
     /// <summary>
@@ -147,12 +148,20 @@ public class PlayerMovement : MonoBehaviour
         return collision.collider.tag == "Ground";
     }
 
+    private void SetTrajectory(Vector3 velocity)
+    {
+        lateralVelocity.x = velocity.x;
+        lateralVelocity.z = velocity.z;
+        rb.AddForce(-rb.velocity.x, velocity.y - rb.velocity.y, -rb.velocity.z, ForceMode.VelocityChange);
+        prevLocation.Set(rb.position.x - lateralVelocity.x, rb.position.y - rb.velocity.y, rb.position.z - lateralVelocity.z);
+    }
+
     /// <summary>
     /// Determines if the player should jump or not.
     /// </summary>
     public void ScheduleJump()
     {
-        this.jumpScheduled = this.numAirJumps < maxAirJumps;
+        jumpScheduled = numAirJumps < maxAirJumps;
     }
 
     /// <summary>
@@ -163,19 +172,19 @@ public class PlayerMovement : MonoBehaviour
     {
         if (isGrounded)
         {
-            this.lateralVelocity = direction * moveSpeed;
+            lateralVelocity = direction * moveSpeed;
         }
         else
         {
             // Corrects the velocity in the event of aerial collisions so that the player shoot in the direction
             // they are holding.
-            this.lateralVelocity.x = this.rb.position.x - this.prevLocation.x;
-            this.lateralVelocity.z = this.rb.position.z - this.prevLocation.z;
+            lateralVelocity.x = rb.position.x - prevLocation.x;
+            lateralVelocity.z = rb.position.z - prevLocation.z;
 
             // Prevents jagged aerial movement.
             // Cannot use RigidBody.AddForce() because we are already using Rigidbody.MovePosition()
             Vector3 targetVelocity = direction * maxAerialMobility;
-            this.lateralVelocity = Vector3.MoveTowards(this.lateralVelocity, targetVelocity, aerialAgility);
+            lateralVelocity = Vector3.MoveTowards(lateralVelocity, targetVelocity, aerialAgility);
         }
     }
 
@@ -185,7 +194,7 @@ public class PlayerMovement : MonoBehaviour
     /// <param name="newRot">The new player rotation.</param>
     public void UpdatePlayerRot(Vector3 newRot)
     {
-        this.playerRot = newRot * cameraSensitivity;
+        playerRot = newRot * cameraSensitivity;
     }
 
     /// <summary>
@@ -194,7 +203,7 @@ public class PlayerMovement : MonoBehaviour
     /// <param name="newRot">The new camera rotation.</param>
     public void UpdateCamRot(Vector3 newRot)
     {
-        this.cameraRot = newRot * cameraSensitivity;
+        cameraRot = newRot * cameraSensitivity;
     }
 
     /// <summary>
@@ -204,5 +213,10 @@ public class PlayerMovement : MonoBehaviour
     public void UpdateSprint(bool sprinting)
     {
         moveSpeed = sprinting && isGrounded ? sprintSpeed : walkSpeed;
+    }
+
+    public void Launch(Vector3 velocity)
+    {
+        SetTrajectory(velocity);
     }
 }
