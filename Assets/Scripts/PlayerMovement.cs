@@ -8,16 +8,16 @@ public class PlayerMovement : MonoBehaviour
 {
     public PlayerSupervisor supervisor;
 
-    [SerializeField] private const float walkSpeed = 10f;
-    [SerializeField] private const float sprintSpeed = 20f;
-    [SerializeField] private const float aerialAgility = 0.004f;    // extremely sensitive
-    [SerializeField] private const float maxAerialMobility = 8f;
+    [SerializeField] private float walkSpeed = 10f;
+    [SerializeField] private float sprintSpeed = 20f;
+    [SerializeField] private float aerialAgility = 0.005f;    // extremely sensitive
+    [SerializeField] private float maxAerialMobility = 5f;
     [SerializeField] private float cameraSensitivity = 6f;
     [SerializeField] private float jumpPower = 6f;
 
     private Rigidbody rb;
     private Vector3 lateralVelocity;
-    private float moveSpeed = walkSpeed;
+    private float moveSpeed = 10f;
 
     private bool jumpScheduled = false;
     private bool isGrounded = true;
@@ -27,8 +27,11 @@ public class PlayerMovement : MonoBehaviour
     private Camera cam;
     private Vector3 playerRot;
     private Vector3 cameraRot;
-    private float camRotTracker = 0;
+    private float camRotTracker = 0f;
     private const float maxCameraRot = 90f;
+
+    // Used to correct lateralVelocity with aerial collisions
+    private Vector3 prevLocation;
 
     private void Start()
     {
@@ -42,8 +45,8 @@ public class PlayerMovement : MonoBehaviour
     private void FixedUpdate()
     {
         Move();
+        Jump(); 
         Rotate();
-        Jump();
         UpdateIsGrounded();
     }
 
@@ -53,15 +56,20 @@ public class PlayerMovement : MonoBehaviour
     /// <param name="collision"></param>
     private void OnCollisionEnter(Collision collision)
     {
-        if (CollisionIsGround(collision))
+        if (HasHitGround(collision))
         {
             numAirJumps = 0;
         }
     }
 
+    /// <summary>
+    /// Updates when the player is on the ground.
+    /// </summary>
+    /// <param name="collision"></param>
+    /// <remarks>This is the repeated call so that it is accurate even on a sloped surface.</remarks>
     private void OnCollisionStay(Collision collision)
     {
-        if (CollisionIsGround(collision))
+        if (HasHitGround(collision))
         {
             isGrounded = true;
         }
@@ -72,8 +80,10 @@ public class PlayerMovement : MonoBehaviour
     /// </summary>
     private void Move()
     {
+        TrackPreviousLocation();
+        CalibrateRBVelocity();
         // RigidBody.MovePosition(float) does automatic physics checking
-        this.rb.MovePosition(this.rb.position + this.lateralVelocity);
+        rb.MovePosition(rb.position + lateralVelocity);
     }
 
     /// <summary>
@@ -81,12 +91,12 @@ public class PlayerMovement : MonoBehaviour
     /// </summary>
     private void Rotate()
     {
-        this.rb.MoveRotation(this.rb.rotation * Quaternion.Euler(this.playerRot));
+        rb.MoveRotation(rb.rotation * Quaternion.Euler(playerRot));
 
-        if (this.cam != null && Math.Abs(this.camRotTracker + this.cameraRot.x) < maxCameraRot)
+        if (cam != null && Math.Abs(camRotTracker + cameraRot.x) < maxCameraRot)
         {
-            this.cam.transform.Rotate(-this.cameraRot);
-            this.camRotTracker += this.cameraRot.x;
+            cam.transform.Rotate(-cameraRot);
+            camRotTracker += cameraRot.x;
         }
     }
 
@@ -97,18 +107,35 @@ public class PlayerMovement : MonoBehaviour
     {
         if (jumpScheduled)
         {
-            this.rb.velocity = new Vector3(this.rb.velocity.x, this.jumpPower, this.rb.velocity.z);
-            this.jumpScheduled = false;
+            rb.velocity.Set(0f, jumpPower, 0f);
+            rb.AddForce(-rb.velocity.x, jumpPower - rb.velocity.y, -rb.velocity.z, ForceMode.VelocityChange);
+            jumpScheduled = false;
             if (!isGrounded)
             {
-                ++this.numAirJumps;
+               ++numAirJumps;
             }
         }
     }
 
+    /// <summary>
+    /// Tracks the previous location to correct the player velocity with aerial collisions.
+    /// </summary>
+    private void TrackPreviousLocation()
+    {
+        prevLocation = rb.position;
+    }
+
+    private void CalibrateRBVelocity()
+    {
+        rb.AddForce(-rb.velocity.x, 0f, -rb.velocity.z, ForceMode.VelocityChange);
+    }
+
+    /// <summary>
+    /// Tracks when the player leaves the ground.
+    /// </summary>
     private void UpdateIsGrounded()
     {
-        if (rb.velocity.y != 0f)
+        if (isGrounded && rb.velocity.y != 0f)
         {
             isGrounded = false;
         }
@@ -116,9 +143,17 @@ public class PlayerMovement : MonoBehaviour
 
     /// <param name="collision">The collisions object</param>
     /// <returns>Whether the collision occurred with the ground.</returns>
-    private bool CollisionIsGround(Collision collision)
+    private bool HasHitGround(Collision collision)
     {
         return collision.collider.tag == "Ground";
+    }
+
+    private void SetTrajectory(Vector3 velocity)
+    {
+        lateralVelocity.x = velocity.x;
+        lateralVelocity.z = velocity.z;
+        rb.AddForce(-rb.velocity.x, velocity.y - rb.velocity.y, -rb.velocity.z, ForceMode.VelocityChange);
+        prevLocation.Set(rb.position.x - lateralVelocity.x, rb.position.y - rb.velocity.y, rb.position.z - lateralVelocity.z);
     }
 
     /// <summary>
@@ -126,7 +161,7 @@ public class PlayerMovement : MonoBehaviour
     /// </summary>
     public void ScheduleJump()
     {
-        this.jumpScheduled = this.numAirJumps < maxAirJumps;
+        jumpScheduled = numAirJumps < maxAirJumps;
     }
 
     /// <summary>
@@ -137,22 +172,19 @@ public class PlayerMovement : MonoBehaviour
     {
         if (isGrounded)
         {
-            this.lateralVelocity = direction * moveSpeed;
+            lateralVelocity = direction * moveSpeed;
         }
         else
         {
-            // Prevents jagged aerial movement
+            // Corrects the velocity in the event of aerial collisions so that the player shoot in the direction
+            // they are holding.
+            lateralVelocity.x = rb.position.x - prevLocation.x;
+            lateralVelocity.z = rb.position.z - prevLocation.z;
+
+            // Prevents jagged aerial movement.
+            // Cannot use RigidBody.AddForce() because we are already using Rigidbody.MovePosition()
             Vector3 targetVelocity = direction * maxAerialMobility;
-            Vector3 velocityDiff = targetVelocity - this.lateralVelocity;
-            Vector3 acceleration = (velocityDiff).normalized * aerialAgility;
-            if (acceleration.sqrMagnitude >= velocityDiff.sqrMagnitude)
-            {
-                this.lateralVelocity = targetVelocity;
-            }
-            else
-            {
-                this.lateralVelocity += acceleration;
-            }
+            lateralVelocity = Vector3.MoveTowards(lateralVelocity, targetVelocity, aerialAgility);
         }
     }
 
@@ -162,7 +194,7 @@ public class PlayerMovement : MonoBehaviour
     /// <param name="newRot">The new player rotation.</param>
     public void UpdatePlayerRot(Vector3 newRot)
     {
-        this.playerRot = newRot * cameraSensitivity;
+        playerRot = newRot * cameraSensitivity;
     }
 
     /// <summary>
@@ -171,7 +203,7 @@ public class PlayerMovement : MonoBehaviour
     /// <param name="newRot">The new camera rotation.</param>
     public void UpdateCamRot(Vector3 newRot)
     {
-        this.cameraRot = newRot * cameraSensitivity;
+        cameraRot = newRot * cameraSensitivity;
     }
 
     /// <summary>
@@ -181,5 +213,10 @@ public class PlayerMovement : MonoBehaviour
     public void UpdateSprint(bool sprinting)
     {
         moveSpeed = sprinting && isGrounded ? sprintSpeed : walkSpeed;
+    }
+
+    public void Launch(Vector3 velocity)
+    {
+        SetTrajectory(velocity);
     }
 }

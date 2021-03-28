@@ -23,9 +23,10 @@ public class PlayerAttack : NetworkBehaviour
     
 
     /// <summary>
-    /// Inner class to represent maximum cooldown, actual cooldown pairs. The class uses this pair such that the Key is
+    /// Inner class to represent maximum cooldown, actual cooldown pairs. The class uses pair such that the Key is
     /// the maximum cooldown while the Value is the current cooldown timer.
     /// </summary>
+    /// <remarks>This could probably be a struct.</remarks>
     private class MutableFloatPair
     {
         public float Key { get; set; }
@@ -38,6 +39,12 @@ public class PlayerAttack : NetworkBehaviour
         }
     }
 
+    private struct CooldownPair
+    {
+        float cooldown;
+        float timer;
+    }
+
     /// <summary>
     /// Initialize other variables like the cooldowns list.
     /// </summary>
@@ -46,9 +53,14 @@ public class PlayerAttack : NetworkBehaviour
         attackHitbox = supervisor.attackHitbox;
         attackScheduled = false;
         cooldowns = new Dictionary<string, MutableFloatPair>();
+        InitializeCooldownList();
+        currentVictims = new HashSet<PlayerHealth>();
+    }
+
+    private void InitializeCooldownList()
+    {
         cooldowns.Add("attackCooldown", new MutableFloatPair(maxAttackCooldown, 0));
         cooldowns.Add("attackDuration", new MutableFloatPair(attackDuration, 0));
-        currentVictims = new HashSet<PlayerHealth>();
     }
 
 
@@ -142,7 +154,7 @@ public class PlayerAttack : NetworkBehaviour
     }
 
     /// <summary>
-    /// Checks if the given player has already been hit by this attack.
+    /// Checks if the given player has already been hit by attack.
     /// </summary>
     /// <param name="victim">The player to check</param>
     /// <returns></returns>

@@ -7,15 +7,18 @@ public class PlayerController : MonoBehaviour
 {
     public PlayerSupervisor supervisor;
 
+    private Vector3 currPlayerRot;
+    private Vector3 currCamRot;
+
     /// <summary>
     /// Processes all player inputs, like movement or attacks.
     /// </summary>
     private void Update()
     {
         CheckSprint();
-        this.supervisor.UpdateDirection(CalcLateralDirection());
-        this.supervisor.UpdatePlayerRot(CalcPlayerRot());
-        this.supervisor.UpdateCamRot(CalcCamRot());
+        supervisor.UpdateDirection(CalcLateralDirection());
+        supervisor.UpdatePlayerRot(CalcPlayerRot());
+        supervisor.UpdateCamRot(CalcCamRot());
         ReadJump();
         ReadAttack();
     }
@@ -38,7 +41,7 @@ public class PlayerController : MonoBehaviour
     private void CheckSprint()
     {
         // Uses inputs in Edit -> Project Settings -> Input Manager
-        this.supervisor.UpdateSprint(Input.GetAxisRaw("Sprint") == 1);
+        supervisor.UpdateSprint(Input.GetAxisRaw("Sprint") == 1);
     }
 
     /// <summary>
@@ -48,7 +51,8 @@ public class PlayerController : MonoBehaviour
     private Vector3 CalcPlayerRot()
     {
         float horizRot = Input.GetAxisRaw("Mouse X");
-        return new Vector3(0f, horizRot, 0f);
+        currPlayerRot.Set(0f, horizRot, 0f);
+        return currPlayerRot;
     }
 
     /// <summary>
@@ -58,7 +62,8 @@ public class PlayerController : MonoBehaviour
     private Vector3 CalcCamRot()
     {
         float vertRot = Input.GetAxisRaw("Mouse Y");
-        return new Vector3(vertRot, 0f, 0f);
+        currCamRot.Set(vertRot, 0f, 0f);
+        return currCamRot;
     }
 
     /// <summary>
@@ -68,7 +73,7 @@ public class PlayerController : MonoBehaviour
     {   // Input.GetKeyDown() only fires once per press
         if (Input.GetKeyDown("space"))
         {
-            this.supervisor.ScheduleJump();
+            supervisor.ScheduleJump();
         }
     }
 
@@ -79,7 +84,7 @@ public class PlayerController : MonoBehaviour
     {
         if (Input.GetMouseButtonDown(0))
         {
-            this.supervisor.ScheduleAttack();
+            supervisor.ScheduleAttack();
         }
     }
 }
