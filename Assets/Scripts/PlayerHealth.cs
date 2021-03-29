@@ -9,14 +9,15 @@ public class PlayerHealth : NetworkBehaviour
     public PlayerSupervisor supervisor;
 
     // Needs to be synced with the server manually.
-    private int health;
+    [SyncVar] private int health;
 
     private const int maxHealth = 100;
 
     /// <summary>
     /// Initializes the health to maxHealth.
     /// </summary>
-   public override void OnStartClient()
+    [Server]
+    public override void OnStartClient()
     {
         health = maxHealth;
     }
@@ -35,18 +36,6 @@ public class PlayerHealth : NetworkBehaviour
     [Server]
     public void Damage(int hp)
     {
-        health -= hp;
-        RpcDamage(hp);
-    }
-
-    /// <summary>
-    /// Deducts health on the client.
-    /// </summary>
-    /// <param name="hp">Hitpoints to deduct.</param>
-    [ClientRpc]
-    private void RpcDamage(int hp)
-    {
-        if (isServer) return;
         health -= hp;
     }
 }

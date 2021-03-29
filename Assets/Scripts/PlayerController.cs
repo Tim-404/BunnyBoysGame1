@@ -1,9 +1,10 @@
 ﻿using UnityEngine;
+using Mirror;
 
 /// <summary>
 /// Receives and interprets player input before passing it to the PlayerSupervisor.
 /// </summary>
-public class PlayerController : MonoBehaviour
+public class PlayerController : NetworkBehaviour
 {
     public PlayerSupervisor supervisor;
 
@@ -13,6 +14,7 @@ public class PlayerController : MonoBehaviour
     /// <summary>
     /// Processes all player inputs, like movement or attacks.
     /// </summary>
+    [Client]
     private void Update()
     {
         CheckSprint();
@@ -27,6 +29,7 @@ public class PlayerController : MonoBehaviour
     /// Calculates player movement.
     /// </summary>
     /// <returns>The vector that determines where the player will move.</returns>
+    [Client]
     private Vector3 CalcLateralDirection()
     {
         // Uses inputs in Edit -> Project Settings -> Input Manager
@@ -38,6 +41,7 @@ public class PlayerController : MonoBehaviour
     /// <summary>
     /// Checks if sprint is enabled
     /// </summary>
+    [Client]
     private void CheckSprint()
     {
         // Uses inputs in Edit -> Project Settings -> Input Manager
@@ -48,6 +52,7 @@ public class PlayerController : MonoBehaviour
     /// Calculates player rotation in the xz-plane.
     /// </summary>
     /// <returns>The vector that will change the player rotation.</returns>
+    [Client]
     private Vector3 CalcPlayerRot()
     {
         float horizRot = Input.GetAxisRaw("Mouse X");
@@ -59,6 +64,7 @@ public class PlayerController : MonoBehaviour
     /// Calculates vertical camera rotation.
     /// </summary>
     /// <returns>The vector that will change the camera rotation.</returns>
+    [Client]
     private Vector3 CalcCamRot()
     {
         float vertRot = Input.GetAxisRaw("Mouse Y");
@@ -69,6 +75,7 @@ public class PlayerController : MonoBehaviour
     /// <summary>
     /// Determines when the player wants to jump.
     /// </summary>
+    [Client]
     private void ReadJump()
     {   // Input.GetKeyDown() only fires once per press
         if (Input.GetKeyDown("space"))
@@ -80,6 +87,7 @@ public class PlayerController : MonoBehaviour
     /// <summary>
     /// Determines when the player wants to attack.
     /// </summary>
+    [Client]
     private void ReadAttack()
     {
         if (Input.GetMouseButtonDown(0))

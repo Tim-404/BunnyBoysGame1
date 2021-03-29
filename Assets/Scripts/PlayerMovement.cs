@@ -44,6 +44,7 @@ public class PlayerMovement : MonoBehaviour
     /// </summary>
     private void FixedUpdate()
     {
+        CalibrateRBVelocity();
         Move();
         Jump(); 
         Rotate();
@@ -81,7 +82,6 @@ public class PlayerMovement : MonoBehaviour
     private void Move()
     {
         TrackPreviousLocation();
-        CalibrateRBVelocity();
         // RigidBody.MovePosition(float) does automatic physics checking
         rb.MovePosition(rb.position + lateralVelocity);
     }
@@ -107,8 +107,7 @@ public class PlayerMovement : MonoBehaviour
     {
         if (jumpScheduled)
         {
-            rb.velocity.Set(0f, jumpPower, 0f);
-            rb.AddForce(-rb.velocity.x, jumpPower - rb.velocity.y, -rb.velocity.z, ForceMode.VelocityChange);
+            rb.velocity = new Vector3(0f, this.jumpPower, 0f);
             jumpScheduled = false;
             if (!isGrounded)
             {
@@ -127,7 +126,7 @@ public class PlayerMovement : MonoBehaviour
 
     private void CalibrateRBVelocity()
     {
-        rb.AddForce(-rb.velocity.x, 0f, -rb.velocity.z, ForceMode.VelocityChange);
+        rb.velocity = new Vector3(0f, rb.velocity.y, 0f);
     }
 
     /// <summary>
@@ -152,14 +151,14 @@ public class PlayerMovement : MonoBehaviour
     {
         lateralVelocity.x = velocity.x;
         lateralVelocity.z = velocity.z;
-        rb.AddForce(-rb.velocity.x, velocity.y - rb.velocity.y, -rb.velocity.z, ForceMode.VelocityChange);
+        rb.velocity = new Vector3(0f, velocity.y, 0f);
         prevLocation.Set(rb.position.x - lateralVelocity.x, rb.position.y - rb.velocity.y, rb.position.z - lateralVelocity.z);
     }
 
     /// <summary>
     /// Determines if the player should jump or not.
     /// </summary>
-    public void ScheduleJump()
+    public void AttemptJump()
     {
         jumpScheduled = numAirJumps < maxAirJumps;
     }
