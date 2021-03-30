@@ -14,7 +14,7 @@ public class PlayerController : NetworkBehaviour
     /// <summary>
     /// Processes all player inputs, like movement or attacks.
     /// </summary>
-    [Client]
+    [ClientCallback]
     private void Update()
     {
         CheckSprint();

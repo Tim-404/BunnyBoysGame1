@@ -1,10 +1,11 @@
 ﻿using System;
 using UnityEngine;
+using Mirror;
 
 /// <summary>
 /// Handles everything related to player movement.
 /// </summary>
-public class PlayerMovement : MonoBehaviour
+public class PlayerMovement : NetworkBehaviour
 {
     public PlayerSupervisor supervisor;
 
@@ -16,14 +17,19 @@ public class PlayerMovement : MonoBehaviour
     [SerializeField] private float jumpPower = 6f;
 
     private Rigidbody rb;
+    
+    /* Need to decide whether to control these vars on server or client. 
+     * on server => client may be teleported when there is lag.
+     * on client => other players may see the player teleporting when there is lag.
+     * 
+     * Currently these vars are controlled on the client.
+     */
     private Vector3 lateralVelocity;
     private float moveSpeed = 10f;
-
     private bool jumpScheduled = false;
     private bool isGrounded = true;
     private int numAirJumps = 0;
     private int maxAirJumps = 1;
-
     private Camera cam;
     private Vector3 playerRot;
     private Vector3 cameraRot;
@@ -39,9 +45,13 @@ public class PlayerMovement : MonoBehaviour
         cam = supervisor.cam;
     }
 
+
+    /* Client only */
+
     /// <summary>
     /// Updates player.
     /// </summary>
+    [ClientCallback]
     private void FixedUpdate()
     {
         CalibrateRBVelocity();
@@ -55,6 +65,7 @@ public class PlayerMovement : MonoBehaviour
     /// Updates when the player is on the ground.
     /// </summary>
     /// <param name="collision"></param>
+    [ClientCallback]
     private void OnCollisionEnter(Collision collision)
     {
         if (HasHitGround(collision))
@@ -68,6 +79,7 @@ public class PlayerMovement : MonoBehaviour
     /// </summary>
     /// <param name="collision"></param>
     /// <remarks>This is the repeated call so that it is accurate even on a sloped surface.</remarks>
+    [ClientCallback]
     private void OnCollisionStay(Collision collision)
     {
         if (HasHitGround(collision))
@@ -79,6 +91,7 @@ public class PlayerMovement : MonoBehaviour
     /// <summary>
     /// Handles player movement.
     /// </summary>
+    [Client]
     private void Move()
     {
         TrackPreviousLocation();
@@ -89,6 +102,7 @@ public class PlayerMovement : MonoBehaviour
     /// <summary>
     /// Handles player and camera rotation.
     /// </summary>
+    [Client]
     private void Rotate()
     {
         rb.MoveRotation(rb.rotation * Quaternion.Euler(playerRot));
@@ -103,6 +117,7 @@ public class PlayerMovement : MonoBehaviour
     /// <summary>
     /// Makes the player jump if a jump is scheduled.
     /// </summary>
+    [Client]
     private void Jump()
     {
         if (jumpScheduled)
@@ -119,11 +134,16 @@ public class PlayerMovement : MonoBehaviour
     /// <summary>
     /// Tracks the previous location to correct the player velocity with aerial collisions.
     /// </summary>
+    [Client]
     private void TrackPreviousLocation()
     {
         prevLocation = rb.position;
     }
 
+    /// <summary>
+    /// Sets the x and z components of the Rigidbody velocity to 0.
+    /// </summary>
+    [Client]
     private void CalibrateRBVelocity()
     {
         rb.velocity = new Vector3(0f, rb.velocity.y, 0f);
@@ -132,6 +152,7 @@ public class PlayerMovement : MonoBehaviour
     /// <summary>
     /// Tracks when the player leaves the ground.
     /// </summary>
+    [Client]
     private void UpdateIsGrounded()
     {
         if (isGrounded && rb.velocity.y != 0f)
@@ -142,22 +163,16 @@ public class PlayerMovement : MonoBehaviour
 
     /// <param name="collision">The collisions object</param>
     /// <returns>Whether the collision occurred with the ground.</returns>
+    [Client]
     private bool HasHitGround(Collision collision)
     {
         return collision.collider.tag == "Ground";
     }
 
-    private void SetTrajectory(Vector3 velocity)
-    {
-        lateralVelocity.x = velocity.x;
-        lateralVelocity.z = velocity.z;
-        rb.velocity = new Vector3(0f, velocity.y, 0f);
-        prevLocation.Set(rb.position.x - lateralVelocity.x, rb.position.y - rb.velocity.y, rb.position.z - lateralVelocity.z);
-    }
-
     /// <summary>
     /// Determines if the player should jump or not.
     /// </summary>
+    [Client]
     public void AttemptJump()
     {
         jumpScheduled = numAirJumps < maxAirJumps;
@@ -167,6 +182,7 @@ public class PlayerMovement : MonoBehaviour
     /// Updates the velocity of the player.
     /// </summary>
     /// <param name="vel">The new velocity.</param>
+    [Client]
     public void UpdateVelocity(Vector3 direction)
     {
         if (isGrounded)
@@ -191,6 +207,7 @@ public class PlayerMovement : MonoBehaviour
     /// Updates the rotation of the player.
     /// </summary>
     /// <param name="newRot">The new player rotation.</param>
+    [Client]
     public void UpdatePlayerRot(Vector3 newRot)
     {
         playerRot = newRot * cameraSensitivity;
@@ -200,6 +217,7 @@ public class PlayerMovement : MonoBehaviour
     /// Updates the rotation of the camera attached to the player if it exists.
     /// </summary>
     /// <param name="newRot">The new camera rotation.</param>
+    [Client]
     public void UpdateCamRot(Vector3 newRot)
     {
         cameraRot = newRot * cameraSensitivity;
@@ -209,13 +227,22 @@ public class PlayerMovement : MonoBehaviour
     /// Toggles movespeed to reflect whether the player is sprinting or not.
     /// </summary>
     /// <param name="sprinting"></param>
+    [Client]
     public void UpdateSprint(bool sprinting)
     {
         moveSpeed = sprinting && isGrounded ? sprintSpeed : walkSpeed;
     }
 
+    /// <summary>
+    /// Sends the player in a certain direction.
+    /// </summary>
+    /// <param name="velocity">The velocity at which to launch the player.</param>
+    [ClientRpc]
     public void Launch(Vector3 velocity)
     {
-        SetTrajectory(velocity);
+        lateralVelocity.x = velocity.x;
+        lateralVelocity.z = velocity.z;
+        rb.velocity = new Vector3(0f, velocity.y, 0f);
+        prevLocation.Set(rb.position.x - lateralVelocity.x, rb.position.y - rb.velocity.y, rb.position.z - lateralVelocity.z);
     }
 }

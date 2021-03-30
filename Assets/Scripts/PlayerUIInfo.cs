@@ -11,7 +11,7 @@ public class PlayerUIInfo : NetworkBehaviour
     public Text health;
     public Text attackCooldown;
 
-    [Client]
+    [ClientCallback]
     private void FixedUpdate()
     {
         UpdateUI();

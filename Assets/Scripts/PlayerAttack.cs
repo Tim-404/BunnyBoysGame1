@@ -16,6 +16,7 @@ public class PlayerAttack : NetworkBehaviour
     
     // These vars are updated on the server (client updates are only for testing).
     private GameObject attackHitbox;
+    private Vector3 attackKnockback = new Vector3(0f, 1f, 2f);
     private HashSet<PlayerHealth> currentVictims;
 
     // These vars are updated only on clients.

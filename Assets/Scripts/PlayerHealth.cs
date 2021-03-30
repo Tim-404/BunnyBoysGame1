@@ -16,7 +16,7 @@ public class PlayerHealth : NetworkBehaviour
     /// <summary>
     /// Initializes the health to maxHealth.
     /// </summary>
-    [Server]
+    [ServerCallback]
     public override void OnStartClient()
     {
         health = maxHealth;
