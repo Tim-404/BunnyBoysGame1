@@ -10,14 +10,16 @@ public class PlayerAttack : NetworkBehaviour
 {
     public PlayerSupervisor supervisor;
 
-    [SerializeField] private float maxAttackCooldown = 0.5f;
-    [SerializeField] private float attackDuration = 0.1f;
+    [SerializeField] private float maxAttackCooldown = 1f;
+    [SerializeField] private float attackDuration = 0.2f;
     [SerializeField] private int attackStrength = 10;
     
-    // These vars are updated on the server and clients.
+    // These vars are updated on the server (client updates are only for testing).
     private GameObject attackHitbox;
+    private Vector3 attackKnockback = new Vector3(0f, 1f, 2f);
     private HashSet<PlayerHealth> currentVictims;
 
+    // These vars are updated only on clients.
     private bool attackScheduled;
     private Dictionary<string, MutableFloatPair> cooldowns;
     
@@ -37,12 +39,6 @@ public class PlayerAttack : NetworkBehaviour
             Key = val1;
             Value = val2;
         }
-    }
-
-    private struct CooldownPair
-    {
-        float cooldown;
-        float timer;
     }
 
     /// <summary>
@@ -117,16 +113,6 @@ public class PlayerAttack : NetworkBehaviour
         }
     }
 
-    /// <summary>
-    /// Determines if the player should attack or not.
-    /// </summary>
-    /// <remarks>Conditions include attack cooldown, hitstun ... (to be implemented)</remarks>
-    [Client]
-    public void ScheduleAttack()
-    {
-        attackScheduled = cooldowns["attackCooldown"].Value == 0;
-    }
-
     /// <returns>Returns the amount of time until the player can attack again.</returns>
     [Client]
     public float GetAttackCooldown()
@@ -190,6 +176,28 @@ public class PlayerAttack : NetworkBehaviour
     /* Client <=> Server */
 
     /// <summary>
+    /// Determines if the player should attack or not using the server vars.
+    /// </summary>
+    /// <remarks>Conditions include attack cooldown, hitstun ... (to be implemented)</remarks>
+    [Command]
+    public void CmdAttemptAttack()
+    {
+        if (cooldowns["attackCooldown"].Value == 0)
+        {
+            RpcScheduleAttack();
+        }
+    }
+
+    /// <summary>
+    /// Schedules the client to attack.
+    /// </summary>
+    [TargetRpc]
+    public void RpcScheduleAttack()
+    {
+        attackScheduled = true;
+    }
+
+    /// <summary>
     /// Places the attackHitbox on the server.
     /// </summary>
     [Command]
@@ -202,6 +210,7 @@ public class PlayerAttack : NetworkBehaviour
     /// <summary>
     /// Places the attackHitbox on the client.
     /// </summary>
+    /// <remarks>Optional, useful for visualizing hitboxes.</remarks>
     [ClientRpc]
     private void RpcActivateHitbox()
     {
@@ -222,6 +231,7 @@ public class PlayerAttack : NetworkBehaviour
     /// <summary>
     /// Removes the attackHitbox on the client.
     /// </summary>
+    /// <remarks>Optional, but must be present if hitbox is activated too.</remarks>
     [ClientRpc]
     private void RpcDeactivateHitbox()
     {
@@ -233,6 +243,7 @@ public class PlayerAttack : NetworkBehaviour
     /// Adds victim to the list on the clients.
     /// </summary>
     /// <param name="victim">The victim to add</param>
+    /// <remarks>Optional</remarks>
     [ClientRpc]
     private void RpcAddVictim(PlayerHealth victim)
     {
@@ -253,6 +264,7 @@ public class PlayerAttack : NetworkBehaviour
     /// <summary>
     /// Clears the victims list on the client.
     /// </summary>
+    /// <remarks>Optional, but must be present if victims are added too.</remarks>
     [ClientRpc]
     private void RpcClearVictims()
     {
