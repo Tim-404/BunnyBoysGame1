@@ -10,34 +10,44 @@ public class PlayerAttack : NetworkBehaviour
 {
     public PlayerSupervisor supervisor;
 
-    [SerializeField] private float maxAttackCooldown = 1f;
-    [SerializeField] private float attackDuration = 0.2f;
-    [SerializeField] private int attackStrength = 10;
+    [SerializeField] private int attackStrength1 = 10;
+    [SerializeField] private Vector3 attackKnockback1 = new Vector3(0f, 1f, 2f);
+    [SerializeField] private GameObject attackHitbox1;
+    [SerializeField] private float attackDuration1 = 0.2f;
+    [SerializeField] private float maxAttackCooldown1 = 1f;
+    [SerializeField] private float hitstun1 = 0.5f;
     
     // These vars are updated on the server (client updates are only for testing).
-    private GameObject attackHitbox;
-    private Vector3 attackKnockback = new Vector3(0f, 1f, 2f);
     private HashSet<PlayerHealth> currentVictims;
 
     // These vars are updated only on clients.
     private bool attackScheduled;
-    private Dictionary<string, MutableFloatPair> cooldowns;
-    
+    private Attack currAttack;
+    private Dictionary<string, float> cooldowns;
+    private List<string> activeCooldownsKeys;
+
+    private Attack baseAttack;
 
     /// <summary>
-    /// Inner class to represent maximum cooldown, actual cooldown pairs. The class uses pair such that the Key is
-    /// the maximum cooldown while the Value is the current cooldown timer.
+    /// Inner class to hold the information on different attacks.
     /// </summary>
-    /// <remarks>This could probably be a struct.</remarks>
-    private class MutableFloatPair
+    private class Attack
     {
-        public float Key { get; set; }
-        public float Value { get; set; }
+        public int Strength { get; }
+        public Vector3 Knockback { get; }
+        public GameObject Hitbox { get; }
+        public float Duration { get; }
+        public float Cooldown { get; }
+        public float Hitstun { get; }
 
-        public MutableFloatPair(float val1, float val2)
+        public Attack(int strength, Vector3 knockback, GameObject hitbox, float duration, float cooldown, float hitstun)
         {
-            Key = val1;
-            Value = val2;
+            Strength = strength;
+            Knockback = knockback;
+            Hitbox = hitbox;
+            Duration = duration;
+            Cooldown = cooldown;
+            Hitstun = hitstun;
         }
     }
 
@@ -46,17 +56,20 @@ public class PlayerAttack : NetworkBehaviour
     /// </summary>
     public override void OnStartClient()
     {
-        attackHitbox = supervisor.attackHitbox;
+
+        baseAttack = new Attack(attackStrength1, attackKnockback1, attackHitbox1, attackDuration1, maxAttackCooldown1, hitstun1);
+        currAttack = baseAttack;
         attackScheduled = false;
-        cooldowns = new Dictionary<string, MutableFloatPair>();
+        cooldowns = new Dictionary<string, float>();
         InitializeCooldownList();
+        activeCooldownsKeys = new List<string>();
         currentVictims = new HashSet<PlayerHealth>();
     }
 
     private void InitializeCooldownList()
     {
-        cooldowns.Add("attackCooldown", new MutableFloatPair(maxAttackCooldown, 0));
-        cooldowns.Add("attackDuration", new MutableFloatPair(attackDuration, 0));
+        cooldowns.Add("attackCooldown", 0);
+        cooldowns.Add("attackDuration", 0);
     }
 
 
@@ -80,9 +93,12 @@ public class PlayerAttack : NetworkBehaviour
         if (attackScheduled)
         {
             CmdClearVictims();
+            currAttack = baseAttack;    // currAttack will depend on which type of attack is used. Right now only baseAttack is available.
             attackScheduled = false;
-            cooldowns["attackCooldown"].Value = maxAttackCooldown;
-            cooldowns["attackDuration"].Value = attackDuration;
+            cooldowns["attackCooldown"] = currAttack.Cooldown;
+            cooldowns["attackDuration"] = currAttack.Duration;
+            activeCooldownsKeys.Add("attackCooldown");
+            activeCooldownsKeys.Add("attackDuration");
             CmdActivateHitbox();
         }
     }
@@ -95,7 +111,7 @@ public class PlayerAttack : NetworkBehaviour
     [Client]
     private void UpdateMultiframeProcesses()
     {
-        if (attackHitbox.activeSelf && cooldowns["attackDuration"].Value == 0)
+        if (currAttack.Hitbox.activeSelf && cooldowns["attackDuration"] == 0)
         {
             CmdDeactivateHitbox();
         }
@@ -107,9 +123,19 @@ public class PlayerAttack : NetworkBehaviour
     [Client]
     private void TickCooldowns()
     {
-        foreach (KeyValuePair<string, MutableFloatPair> cooldownStat in cooldowns)
+        List<string> inactiveCooldownKeys = new List<string>();
+        foreach (string key in activeCooldownsKeys)
         {
-            cooldownStat.Value.Value = Math.Max(cooldownStat.Value.Value - Time.fixedDeltaTime, 0);
+            cooldowns[key] = Math.Max(cooldowns[key] - Time.fixedDeltaTime, 0);
+            if (cooldowns[key] == 0)
+            {
+                inactiveCooldownKeys.Add(key);
+            }
+        }
+
+        foreach (string key in inactiveCooldownKeys)
+        {
+            activeCooldownsKeys.Remove(key);
         }
     }
 
@@ -117,7 +143,7 @@ public class PlayerAttack : NetworkBehaviour
     [Client]
     public float GetAttackCooldown()
     {
-        return cooldowns["attackCooldown"].Value;
+        return cooldowns["attackCooldown"];
     }
 
 
@@ -136,6 +162,7 @@ public class PlayerAttack : NetworkBehaviour
             && !PreviouslyHit(otherSupervisor.healthMonitor))
         {
             InflictDamageOn(otherSupervisor.healthMonitor);
+            // TODO: hitstun and launch
         }
     }
 
@@ -157,7 +184,7 @@ public class PlayerAttack : NetworkBehaviour
     [Server]
     private void InflictDamageOn(PlayerHealth victim)
     {
-        victim.Damage(attackStrength);
+        victim.Damage(currAttack.Strength);
         AddVictim(victim);
     }
     
@@ -182,7 +209,7 @@ public class PlayerAttack : NetworkBehaviour
     [Command]
     public void CmdAttemptAttack()
     {
-        if (cooldowns["attackCooldown"].Value == 0)
+        if (cooldowns["attackCooldown"] == 0)
         {
             RpcScheduleAttack();
         }
@@ -203,7 +230,7 @@ public class PlayerAttack : NetworkBehaviour
     [Command]
     private void CmdActivateHitbox()
     {
-        attackHitbox.SetActive(true);
+        currAttack.Hitbox.SetActive(true);
         RpcActivateHitbox();
     }
 
@@ -215,7 +242,7 @@ public class PlayerAttack : NetworkBehaviour
     private void RpcActivateHitbox()
     {
         if (isServer) return;
-        attackHitbox.SetActive(true);
+        currAttack.Hitbox.SetActive(true);
     }
 
     /// <summary>
@@ -224,7 +251,7 @@ public class PlayerAttack : NetworkBehaviour
     [Command]
     private void CmdDeactivateHitbox()
     {
-        attackHitbox.SetActive(false);
+        currAttack.Hitbox.SetActive(false);
         RpcDeactivateHitbox();
     }
 
@@ -236,7 +263,7 @@ public class PlayerAttack : NetworkBehaviour
     private void RpcDeactivateHitbox()
     {
         if (isServer) return;
-        attackHitbox.SetActive(false);
+        currAttack.Hitbox.SetActive(false);
     }
 
     /// <summary>

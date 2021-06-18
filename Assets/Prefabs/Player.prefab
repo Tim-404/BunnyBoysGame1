@@ -273,6 +273,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c100947d51024264cb628057f9bf7725, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  syncMode: 0
+  syncInterval: 0.1
   supervisor: {fileID: 8822970831047661330}
   walkSpeed: 10
   sprintSpeed: 20
@@ -295,9 +297,12 @@ MonoBehaviour:
   syncMode: 0
   syncInterval: 0.1
   supervisor: {fileID: 8822970831047661330}
-  maxAttackCooldown: 1
-  attackDuration: 0.2
-  attackStrength: 10
+  attackStrength1: 10
+  attackKnockback1: {x: 0, y: 1, z: 2}
+  attackHitbox1: {fileID: 8219261827474456246}
+  attackDuration1: 0.2
+  maxAttackCooldown1: 1
+  hitstun1: 0.5
 --- !u!114 &4602214492880086931
 MonoBehaviour:
   m_ObjectHideFlags: 0
