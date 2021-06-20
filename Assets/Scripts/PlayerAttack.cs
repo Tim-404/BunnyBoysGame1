@@ -10,23 +10,21 @@ public class PlayerAttack : NetworkBehaviour
 {
     public PlayerSupervisor supervisor;
 
-    [SerializeField] private int attackStrength1 = 10;
-    [SerializeField] private Vector3 attackKnockback1 = new Vector3(0f, 1f, 2f);
-    [SerializeField] private GameObject attackHitbox1;
-    [SerializeField] private float attackDuration1 = 0.2f;
-    [SerializeField] private float maxAttackCooldown1 = 1f;
-    [SerializeField] private float hitstun1 = 0.5f;
+    [SerializeField] private GameObject baseAttackHitbox;
+    // Add additional hitboxes for various attacks here
+    // [SerializeField] private GameObject specialAttackHitbox;
+
+    // These vars are updated everywhere.
+    private Attack currAttack;
+    private Dictionary<string, Attack> arsenal;
+    private Dictionary<string, float> cooldowns;
     
     // These vars are updated on the server (client updates are only for testing).
     private HashSet<PlayerHealth> currentVictims;
+    private List<string> activeCooldownKeys;
 
     // These vars are updated only on clients.
     private bool attackScheduled;
-    private Attack currAttack;
-    private Dictionary<string, float> cooldowns;
-    private List<string> activeCooldownsKeys;
-
-    private Attack baseAttack;
 
     /// <summary>
     /// Inner class to hold the information on different attacks.
@@ -57,19 +55,30 @@ public class PlayerAttack : NetworkBehaviour
     public override void OnStartClient()
     {
 
-        baseAttack = new Attack(attackStrength1, attackKnockback1, attackHitbox1, attackDuration1, maxAttackCooldown1, hitstun1);
-        currAttack = baseAttack;
         attackScheduled = false;
-        cooldowns = new Dictionary<string, float>();
+        InitializeArsenal();
         InitializeCooldownList();
-        activeCooldownsKeys = new List<string>();
+        activeCooldownKeys = new List<string>();
         currentVictims = new HashSet<PlayerHealth>();
     }
 
     private void InitializeCooldownList()
     {
-        cooldowns.Add("attackCooldown", 0);
-        cooldowns.Add("attackDuration", 0);
+        cooldowns = new Dictionary<string, float>
+        {
+            { "attackCooldown", 0 },
+            { "attackDuration", 0 }
+        };
+    }
+
+    private void InitializeArsenal()
+    {
+        arsenal = new Dictionary<string, Attack>
+        {
+            { "base", new Attack(10, new Vector3(0f, 1f, 2f), baseAttackHitbox, 0.2f, 1f, 0.5f) }
+            // Add new attacks here
+            // { "special", new Attack(**insert stats here**) }
+        };
     }
 
 
@@ -80,7 +89,6 @@ public class PlayerAttack : NetworkBehaviour
     private void FixedUpdate()
     {
         LaunchAttack();
-        UpdateMultiframeProcesses();
         TickCooldowns();
     }
 
@@ -93,27 +101,10 @@ public class PlayerAttack : NetworkBehaviour
         if (attackScheduled)
         {
             CmdClearVictims();
-            currAttack = baseAttack;    // currAttack will depend on which type of attack is used. Right now only baseAttack is available.
+            CmdSetCurrentAttack();
             attackScheduled = false;
-            cooldowns["attackCooldown"] = currAttack.Cooldown;
-            cooldowns["attackDuration"] = currAttack.Duration;
-            activeCooldownsKeys.Add("attackCooldown");
-            activeCooldownsKeys.Add("attackDuration");
+            CmdStartCooldowns();
             CmdActivateHitbox();
-        }
-    }
-
-    
-    /// <summary>
-    /// Updates all processes that span multiple frames. This includes managing attack hitboxes
-    /// and animations (if we get there)
-    /// </summary>
-    [Client]
-    private void UpdateMultiframeProcesses()
-    {
-        if (currAttack.Hitbox.activeSelf && cooldowns["attackDuration"] == 0)
-        {
-            CmdDeactivateHitbox();
         }
     }
 
@@ -123,8 +114,10 @@ public class PlayerAttack : NetworkBehaviour
     [Client]
     private void TickCooldowns()
     {
+        CmdTickCooldowns();
+        if (isServer) return;
         List<string> inactiveCooldownKeys = new List<string>();
-        foreach (string key in activeCooldownsKeys)
+        foreach (string key in activeCooldownKeys)
         {
             cooldowns[key] = Math.Max(cooldowns[key] - Time.fixedDeltaTime, 0);
             if (cooldowns[key] == 0)
@@ -135,7 +128,7 @@ public class PlayerAttack : NetworkBehaviour
 
         foreach (string key in inactiveCooldownKeys)
         {
-            activeCooldownsKeys.Remove(key);
+            activeCooldownKeys.Remove(key);
         }
     }
 
@@ -164,6 +157,16 @@ public class PlayerAttack : NetworkBehaviour
             InflictDamageOn(otherSupervisor.healthMonitor);
             // TODO: hitstun and launch
         }
+    }
+
+    /// <summary>
+    /// Removes the attackHitbox on the server.
+    /// </summary>
+    [Server]
+    private void DeactivateHitbox()
+    {
+        currAttack.Hitbox.SetActive(false);
+        RpcDeactivateHitbox();
     }
 
     /// <summary>
@@ -225,6 +228,78 @@ public class PlayerAttack : NetworkBehaviour
     }
 
     /// <summary>
+    /// Tick cooldowns on the server.
+    /// </summary>
+    [Command]
+    private void CmdTickCooldowns()
+    {
+        List<string> inactiveCooldownKeys = new List<string>();
+        foreach (string key in activeCooldownKeys)
+        {
+            cooldowns[key] = Math.Max(cooldowns[key] - Time.fixedDeltaTime, 0);
+            if (cooldowns[key] == 0)
+            {
+                inactiveCooldownKeys.Add(key);
+            }
+        }
+
+        foreach (string key in inactiveCooldownKeys)
+        {
+            activeCooldownKeys.Remove(key);
+            if (key == "attackDuration")
+            {
+                DeactivateHitbox();
+            }
+        }
+    }
+    
+    /// <summary>
+    /// Sets the current attack on the server.
+    /// </summary>
+    [Command]
+    private void CmdSetCurrentAttack()
+    {
+        currAttack = arsenal["base"];    // currAttack will depend on which type of attack is used. Right now only baseAttack is available.
+        RpcSetCurrentAttack();
+    }
+
+    /// <summary>
+    /// Sets the current attack on the clients.
+    /// </summary>
+    [ClientRpc]
+    private void RpcSetCurrentAttack()
+    {
+        if (isServer) return;
+        currAttack = arsenal["base"];    // currAttack will depend on which type of attack is used. Right now only baseAttack is available.
+    }
+
+    /// <summary>
+    /// Sets the attack cooldowns on the server.
+    /// </summary>
+    [Command]
+    private void CmdStartCooldowns()
+    {
+        cooldowns["attackCooldown"] = currAttack.Cooldown;
+        cooldowns["attackDuration"] = currAttack.Duration;
+        activeCooldownKeys.Add("attackCooldown");
+        activeCooldownKeys.Add("attackDuration");
+        RpcStartCooldowns();
+    }
+
+    /// <summary>
+    /// Sets the attack cooldowns on the client.
+    /// </summary>
+    [TargetRpc]
+    private void RpcStartCooldowns()
+    {
+        if (isServer) return;
+        cooldowns["attackCooldown"] = currAttack.Cooldown;
+        cooldowns["attackDuration"] = currAttack.Duration;
+        activeCooldownKeys.Add("attackCooldown");
+        activeCooldownKeys.Add("attackDuration");
+    }
+
+    /// <summary>
     /// Places the attackHitbox on the server.
     /// </summary>
     [Command]
@@ -243,16 +318,6 @@ public class PlayerAttack : NetworkBehaviour
     {
         if (isServer) return;
         currAttack.Hitbox.SetActive(true);
-    }
-
-    /// <summary>
-    /// Removes the attackHitbox on the server.
-    /// </summary>
-    [Command]
-    private void CmdDeactivateHitbox()
-    {
-        currAttack.Hitbox.SetActive(false);
-        RpcDeactivateHitbox();
     }
 
     /// <summary>

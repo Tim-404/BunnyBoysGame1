@@ -297,12 +297,7 @@ MonoBehaviour:
   syncMode: 0
   syncInterval: 0.1
   supervisor: {fileID: 8822970831047661330}
-  attackStrength1: 10
-  attackKnockback1: {x: 0, y: 1, z: 2}
-  attackHitbox1: {fileID: 8219261827474456246}
-  attackDuration1: 0.2
-  maxAttackCooldown1: 1
-  hitstun1: 0.5
+  baseAttackHitbox: {fileID: 8219261827474456246}
 --- !u!114 &4602214492880086931
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -766,7 +761,7 @@ GameObject:
   - component: {fileID: 5698919026735082277}
   - component: {fileID: 4866260578278161720}
   m_Layer: 0
-  m_Name: AttackHitbox
+  m_Name: BaseAttackHitbox
   m_TagString: AttackHitbox
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
